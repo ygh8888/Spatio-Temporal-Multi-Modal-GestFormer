@@ -187,11 +187,13 @@ class SSL(nn.Module):
         self.conv9 = nn.Conv2d(channels, channels, kernel_size=3, padding=1, groups=channels, bias=False)#conv_block_my(channels, channels, kernel_size = 3, stride=1, padding = 9, dilation=9)
 
         self.conv_cat = nn.Conv2d(channels*4, channels, kernel_size=3, padding=1, groups=channels, bias=False)#conv_block_my(channels*4, channels, kernel_size = 3, stride = 1, padding = 1, dilation=1)
+        # DWT 모듈: __init__에서 한 번만 생성 (MIG 환경 메모리 절약)
+        self.dwt = DWTForward(J=1, mode='zero', wave='db3')
+        self.idwt = DWTInverse(wave='db3', mode='zero')
 
     def forward(self, x):
 
-        aa =  DWTForward(J=1, mode='zero', wave='db3').cuda(device=0)
-        yl, yh = aa(x)
+        yl, yh = self.dwt(x)
 
         yh_out = yh[0]
         ylh = yh_out[:,:,0,:,:]
@@ -208,8 +210,7 @@ class SSL(nn.Module):
         rec_yh.append(cat_all)
 
 
-        ifm = DWTInverse(wave='db3', mode='zero').cuda(device=0)
-        Y = ifm((conv_rec1, rec_yh))
+        Y = self.idwt((conv_rec1, rec_yh))
 
         return Y
     
@@ -284,7 +285,7 @@ class EncoderSelfAttention(nn.Module):
 
     def forward(self, x):
         x = self.Spatial_embedding(x)
-        in_encoder = x + sinusoid_encoding_table(x.shape[1], x.shape[2]).expand(x.shape).cuda(device=0)
+        in_encoder = x + sinusoid_encoding_table(x.shape[1], x.shape[2]).expand(x.shape).to(x.device)
         for l in self.encoder:
             # in_encoder = l(in_encoder, in_encoder, in_encoder)
             in_encoder = l(in_encoder)

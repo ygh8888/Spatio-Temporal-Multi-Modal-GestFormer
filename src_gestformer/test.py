@@ -15,10 +15,13 @@ from models.temporal import GestureTransoformer
 # Import Utils
 from tqdm import tqdm
 from utils.average_meter import AverageMeter
-from torchstat import stat
 import time
-import torchsummary
-from fvcore.nn import FlopCountAnalysis
+try:
+    from torchstat import stat
+    import torchsummary
+    from fvcore.nn import FlopCountAnalysis
+except ImportError:
+    stat = torchsummary = FlopCountAnalysis = None
 
 
 # Setting seeds

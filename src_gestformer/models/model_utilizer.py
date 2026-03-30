@@ -122,7 +122,10 @@ class ModuleUtilizer(object):
             iters = checkpoint_dict['iter'] if 'iter' in checkpoint_dict else 0
             optimizer = checkpoint_dict['optimizer'] if 'optimizer' in checkpoint_dict else None
             epoch = checkpoint_dict['epoch'] if 'epoch' in checkpoint_dict else None
-        net = nn.DataParallel(net, device_ids=self.configer.get('gpu')).to(self.device)
+        # MIG 환경: device_count()를 초과하는 gpu_id 제거
+        available = torch.cuda.device_count()
+        gpu_ids = [g for g in self.configer.get('gpu') if g < available]
+        net = nn.DataParallel(net, device_ids=gpu_ids).to(self.device)
         return net, iters, epoch, optimizer
 
     def _save_net(self, net, optimizer, iters, epoch, all=False):
