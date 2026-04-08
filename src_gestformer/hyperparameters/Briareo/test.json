@@ -4,7 +4,7 @@
     "phase": "test",
     "data": {
         "optical_flow": false,
-        "type": "rgb",
+        "type": "ir",
         "n_classes": 12,
         "n_frames": 40,
         "data_path": "/data/Briareo",
@@ -24,3 +24,4 @@
         "n_module": 6
     }
 }
+

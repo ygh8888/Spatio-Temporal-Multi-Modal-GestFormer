@@ -8,7 +8,7 @@
         "type": "normal",
         "n_classes": 25,
         "n_frames": 40,
-        "data_path": "/data/NVGestures",
+        "data_path": "/data/NVGesture",
         "result_dir": "./result",
         "batch_size": 8
     },

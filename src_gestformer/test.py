@@ -18,7 +18,7 @@ from utils.average_meter import AverageMeter
 import time
 try:
     from torchstat import stat
-    import torchsummary
+    from torchinfo import summary   ## 원본 : import torchsummary -> DWT 모듈과 호환성 문제 발생
     from fvcore.nn import FlopCountAnalysis
 except ImportError:
     stat = torchsummary = FlopCountAnalysis = None
@@ -130,7 +130,7 @@ class GestureTest(object):
                 # print(self.device)
                 flops = FlopCountAnalysis(self.net, inputs)
                 print(flops.total()/1e9)
-                torchsummary.summary(self.net, inputs[0].shape)
+                summary(self.net, input_size=inputs[0].unsqueeze(0).shape)  ## 원본 : torchsummary.summary(self.net, inputs[0].shape) -> DWT 모듈과 호환성 문제 발생
 
                 start_time = time.time()
                 output = self.net(inputs)
@@ -142,7 +142,7 @@ class GestureTest(object):
                 if predicted == correct:
                     c += 1
                 tot += 1
-                break
+                ## break
 
         accuracy = c / tot
         inference_time = end_time - start_time
