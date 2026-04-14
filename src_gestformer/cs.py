@@ -1,55 +1,211 @@
-import pandas as pd
+"""
+Late Fusion Multi-modal Evaluation Script (Paper Table 1 reproduction)
+=======================================================================
+Usage:
+    python cs.py --dataset Briareo --all
+    python cs.py --dataset Nvgestures --all
+    python cs.py --dataset Briareo --modalities normal ir depth
+
+Output files:
+    results/Briareo_fusion_results.csv
+    results/Briareo_fusion_results.txt
+    results/Nvgestures_fusion_results.csv
+    results/Nvgestures_fusion_results.txt
+"""
+
+import argparse
+import os
+from itertools import combinations
+
 import numpy as np
-# df1 = pd.read_csv('csv/Briareo/normal.csv', header = None) # place your csv1 in df1
-
-#df1[df1.columns.drop('A')]
-o = pd.read_csv('csv/Briareo/original.csv', header = None) 
-df1 = pd.read_csv('csv/Briareo/normal.csv', header = None) # place your csv1 in df1
-df2 = pd.read_csv('csv/Briareo/depth.csv', header = None) # place your csv2 in df2
-df3 = pd.read_csv('csv/Briareo/ir.csv', header = None) # place your csv2 in df2
-df4 = pd.read_csv('csv/Briareo/rgbop.csv', header = None) # place your csv2 in df2
-df5 = pd.read_csv('csv/Briareo/rgb.csv', header = None) # place your csv2 in df2
-#df2[df2.columns.drop('A')]
-#df4 = pd.read_csv('csv/Briareo/color.csv', header = None) 
-
-o1 = o.iloc[:,:].values.tolist() 
-#print(type(o1))
-
-rate_in_1 = df1.iloc[:,:].values.tolist() #store the values of the 3rd column from csv1 to a list
-rate_out_1 = df2.iloc[:,:].values.tolist() #store the values of the 4th column from csv1 to a list
-rate_out_2 = df3.iloc[:,:].values.tolist() #store the values of the 4th column from csv1 to a list
-rate_in_2 = df4.iloc[:,:].values.tolist() #store the values of the 4th column from csv1 to a list
-rate_in_5 = df5.iloc[:,:].values.tolist() #store the values of the 4th column from csv1 to a list
+import pandas as pd
 
 
-# rate_in_2 = df2.iloc[:,2].values.tolist() #store the values of the 3rd column from csv1 to a list
-#rate_out_2 = df2.iloc[:,3].values.tolist() #store the values of the 4th column from csv1 to a list
+DATASET_CONFIG = {
+    'Briareo': {
+        'csv_dir': 'csv/Briareo',
+        'n_samples': 288,
+        'modalities': ['rgb', 'depth', 'ir', 'normal', 'rgb_optflow'],
+        'modality_labels': ['Color', 'Depth', 'IR', 'Normals', 'Optical flow'],
+    },
+    'Nvgestures': {
+        'csv_dir': 'csv/Nvgestures',
+        'n_samples': 482,
+        'modalities': ['color', 'depth', 'ir', 'normal', 'depth_optflow'],
+        'modality_labels': ['Color', 'Depth', 'IR', 'Normals', 'Optical flow'],
+    }
+}
 
- # add the values of 2 rate in lists into rate_in_total list
-# rate_in_total = [x+y for x, y in zip(rate_in_1, rate_out_1)] # add the values of 2 rate out lists into rate_out_total list
-# rate_in_total = [max(x,y) for (x, y) in zip(rate_in_1, rate_out_2)]
-# rate_in_total = [np.add(x,y)/2 for (x, y) in zip(rate_in_1, rate_out_1)]
-# rate_in_total = [max(max(x,y),z) for (x, y, z) in zip(rate_in_1, rate_out_1, rate_out_2)]
-# rate_in_total = [np.add(np.add(x,y),z)/3 for (x, y, z) in zip(rate_in_1, rate_out_1, rate_out_2)]
-# rate_in_total = [np.add(np.add(np.add(x,y),w),z)/4 for (x, y,z,w) in zip(rate_in_1, rate_out_1,rate_out_2,rate_in_2)]
-rate_in_total = [np.add(np.add(np.add(np.add(x,y),w),z),k)/5 for (x, y,z,w,k) in zip(rate_in_1, rate_out_1,rate_out_2,rate_in_2,rate_in_5)]
-#print(rate_in_total[1]) 
 
-final_df = pd.DataFrame(rate_in_total)
-#print(final_df)
-with open('csv/Briareo/ir_rgb.csv', 'a', newline='') as csvfile:
-	final_df.to_csv(csvfile, mode='a',header=False,index =False)
-	# print(csvfile)
-#print(np.where(max(rate_in_total[1])))
+def load_csv(csv_dir, modality):
+    path = os.path.join(csv_dir, f'{modality}.csv')
+    if not os.path.exists(path):
+        return None
+    return pd.read_csv(path, header=None).values.tolist()
 
-#print(len(rate_in_total))
-c=0
-for x in range(len(rate_in_total)):
-	#print(np.argmax(rate_in_total[x], axis=0))
-	#print(o1[x])
-	#print(np.argmax(rate_in_total[x], axis=0)==o1[x])
-	if np.argmax(rate_in_total[x], axis=0)==o1[x]:
-		c +=1
-#print(c)		
-print( c / 218)
-# print( c / 482)
+
+def load_gt(csv_dir):
+    path = os.path.join(csv_dir, 'original.csv')
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Ground truth file not found: {path}")
+    return pd.read_csv(path, header=None).iloc[:, 0].values.tolist()
+
+
+def late_fusion(prob_list):
+    n = len(prob_list)
+    return [
+        np.add.reduce([prob_list[m][i] for m in range(n)]) / n
+        for i in range(len(prob_list[0]))
+    ]
+
+
+def evaluate(fused, gt):
+    c = sum(1 for i in range(len(fused)) if np.argmax(fused[i]) == gt[i])
+    return c / len(gt)
+
+
+def run_all_combinations(dataset):
+    cfg = DATASET_CONFIG[dataset]
+    csv_dir = cfg['csv_dir']
+    modalities = cfg['modalities']
+    labels = cfg['modality_labels']
+
+    gt = load_gt(csv_dir)
+
+    available = {}
+    print(f"\nChecking available CSV files for {dataset}:")
+    for m, l in zip(modalities, labels):
+        data = load_csv(csv_dir, m)
+        if data is not None:
+            available[m] = data
+            print(f"  [OK]   {l} ({m}.csv)")
+        else:
+            print(f"  [SKIP] {l} ({m}.csv not found)")
+
+    if not available:
+        print("No CSV files available for evaluation.")
+        return
+
+    avail_keys = list(available.keys())
+    rows = []
+
+    print(f"\n{'='*72}")
+    print(f" Dataset: {dataset}  |  Available modalities: {len(avail_keys)}")
+    print(f"{'='*72}")
+    print(f" {'#':<3} {'Color':<8} {'Depth':<8} {'IR':<5} {'Normals':<10} {'Opt.Flow':<11} {'Accuracy'}")
+    print(f" {'-'*68}")
+
+    for r in range(1, len(avail_keys) + 1):
+        for combo in combinations(avail_keys, r):
+            prob_list = [available[m] for m in combo]
+            fused = late_fusion(prob_list)
+            acc = evaluate(fused, gt)
+
+            combo_labels = [labels[modalities.index(m)] for m in combo]
+            label_str = ' + '.join(combo_labels)
+
+            row = {
+                '#': r,
+                'Color':        'v' if 'rgb'   in combo or 'color'        in combo else '',
+                'Depth':        'v' if 'depth'  in combo else '',
+                'IR':           'v' if 'ir'     in combo else '',
+                'Normals':      'v' if 'normal' in combo else '',
+                'Optical flow': 'v' if 'rgb_optflow' in combo or 'depth_optflow' in combo else '',
+                'Combination':  label_str,
+                'Accuracy':     f"{acc*100:.2f}%",
+                'Accuracy_float': round(acc * 100, 2),
+            }
+            rows.append(row)
+
+            print(
+                f" {r:<3} "
+                f"{'v' if row['Color']        else ' ':<8}"
+                f"{'v' if row['Depth']        else ' ':<8}"
+                f"{'v' if row['IR']           else ' ':<5}"
+                f"{'v' if row['Normals']      else ' ':<10}"
+                f"{'v' if row['Optical flow'] else ' ':<11}"
+                f"{acc*100:.2f}%"
+            )
+
+    print(f" {'='*68}")
+
+    os.makedirs('results', exist_ok=True)
+
+    csv_out = f'results/{dataset}_fusion_results.csv'
+    df = pd.DataFrame(rows).drop(columns=['Accuracy_float'])
+    df.to_csv(csv_out, index=False, encoding='utf-8-sig')
+
+    txt_out = f'results/{dataset}_fusion_results.txt'
+    with open(txt_out, 'w') as f:
+        f.write(f"Table. Results for different modalities on {dataset} dataset.\n")
+        f.write(f"Late Fusion (average of softmax probabilities)\n")
+        f.write("=" * 72 + "\n")
+        f.write(f" {'#':<3} {'Color':<8} {'Depth':<8} {'IR':<5} {'Normals':<10} {'Opt.Flow':<11} {'Accuracy'}\n")
+        f.write(" " + "-" * 68 + "\n")
+        for row in rows:
+            f.write(
+                f" {row['#']:<3} "
+                f"{'v' if row['Color']        else ' ':<8}"
+                f"{'v' if row['Depth']        else ' ':<8}"
+                f"{'v' if row['IR']           else ' ':<5}"
+                f"{'v' if row['Normals']      else ' ':<10}"
+                f"{'v' if row['Optical flow'] else ' ':<11}"
+                f"{row['Accuracy']}\n"
+            )
+        f.write("=" * 72 + "\n")
+        best = max(rows, key=lambda x: x['Accuracy_float'])
+        f.write(f"\nBest accuracy   : {best['Accuracy']}\n")
+        f.write(f"Best combination: {best['Combination']}\n")
+
+    print(f"\nResults saved:")
+    print(f"  CSV : {csv_out}")
+    print(f"  TXT : {txt_out}")
+
+    best = max(rows, key=lambda x: x['Accuracy_float'])
+    print(f"\nBest accuracy : {best['Accuracy']}  ({best['Combination']})")
+
+    return rows
+
+
+def run_single(dataset, modalities_input):
+    cfg = DATASET_CONFIG[dataset]
+    csv_dir = cfg['csv_dir']
+    gt = load_gt(csv_dir)
+
+    prob_list = []
+    for m in modalities_input:
+        data = load_csv(csv_dir, m)
+        if data is None:
+            print(f"ERROR: {m}.csv not found")
+            return
+        prob_list.append(data)
+
+    fused = late_fusion(prob_list)
+    acc = evaluate(fused, gt)
+    print(f"[{len(modalities_input)} modality] {' + '.join(modalities_input)}: {acc*100:.2f}%")
+    return acc
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Late Fusion multi-modal evaluation (Paper Table 1 reproduction)')
+    parser.add_argument('--dataset', type=str, required=True,
+                        choices=['Briareo', 'Nvgestures'],
+                        help='Dataset name')
+    parser.add_argument('--modalities', nargs='+', default=None,
+                        help='List of modalities (e.g. normal depth ir)')
+    parser.add_argument('--all', action='store_true',
+                        help='Evaluate all combinations and save results')
+    args = parser.parse_args()
+
+    if args.all:
+        run_all_combinations(args.dataset)
+    elif args.modalities:
+        run_single(args.dataset, args.modalities)
+    else:
+        print("Please specify --modalities or --all.")
+        parser.print_help()
+
+
+if __name__ == '__main__':
+    main()

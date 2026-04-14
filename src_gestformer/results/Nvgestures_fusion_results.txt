@@ -1,0 +1,40 @@
+Table. Results for different modalities on Nvgestures dataset.
+Late Fusion (average of softmax probabilities)
+========================================================================
+ #   Color    Depth    IR    Normals    Opt.Flow    Accuracy
+ --------------------------------------------------------------------
+ 1   v                                         75.52%
+ 1           v                                 78.84%
+ 1                   v                         63.28%
+ 1                        v                    81.95%
+ 1                                  v          81.54%
+ 2   v       v                                 79.67%
+ 2   v               v                         77.39%
+ 2   v                    v                    82.57%
+ 2   v                              v          81.33%
+ 2           v       v                         80.91%
+ 2           v            v                    82.99%
+ 2           v                      v          84.23%
+ 2                   v    v                    82.78%
+ 2                   v              v          81.74%
+ 2                        v         v          84.23%
+ 3   v       v       v                         82.16%
+ 3   v       v            v                    82.57%
+ 3   v       v                      v          82.78%
+ 3   v               v    v                    83.61%
+ 3   v               v              v          84.23%
+ 3   v                    v         v          84.65%
+ 3           v       v    v                    84.23%
+ 3           v       v              v          84.23%
+ 3           v            v         v          84.02%
+ 3                   v    v         v          84.85%
+ 4   v       v       v    v                    84.44%
+ 4   v       v       v              v          84.44%
+ 4   v       v            v         v          84.44%
+ 4   v               v    v         v          84.65%
+ 4           v       v    v         v          84.65%
+ 5   v       v       v    v         v          85.06%
+========================================================================
+
+Best accuracy   : 85.06%
+Best combination: Color + Depth + IR + Normals + Optical flow

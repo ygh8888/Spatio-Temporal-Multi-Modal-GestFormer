@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import os
 import torch
 
 from torch.utils.data import DataLoader
@@ -120,6 +122,18 @@ class GestureTest(object):
         self.net.eval()
         c = 0
         tot = 0
+        sm = torch.nn.Softmax(dim=1)
+        prob_list = []
+        gt_list = []
+
+        # CSV 저장 경로 설정
+        csv_dir = os.path.join('csv', self.dataset.capitalize())
+        os.makedirs(csv_dir, exist_ok=True)
+        # optical flow 여부를 파일명에 반영
+        modality_name = self.data_type + ('_optflow' if self.optical_flow else '')
+        csv_path = os.path.join(csv_dir, f'{modality_name}.csv')
+        gt_path  = os.path.join(csv_dir, 'original.csv')
+
         with torch.no_grad():
             for i, data_tuple in enumerate(tqdm(self.data_loader, desc="Test")):
                 """
@@ -127,27 +141,34 @@ class GestureTest(object):
                 """
                 inputs = data_tuple[0].to(self.device)
                 gt = data_tuple[1].to(self.device)
-                # print(self.device)
-                flops = FlopCountAnalysis(self.net, inputs)
-                print(flops.total()/1e9)
-                summary(self.net, input_size=inputs[0].unsqueeze(0).shape)  ## 원본 : torchsummary.summary(self.net, inputs[0].shape) -> DWT 모듈과 호환성 문제 발생
+                if i == 0:
+                    flops = FlopCountAnalysis(self.net, inputs)
+                    print(f"GFLOPs: {flops.total()/1e9:.2f}")
+                    summary(self.net, input_size=inputs[0].unsqueeze(0).shape)
 
                 start_time = time.time()
                 output = self.net(inputs)
                 end_time = time.time()
 
+                prob = sm(output)
                 predicted = torch.argmax(output.detach(), dim=1)
                 correct = gt.detach().squeeze(dim=1)
+
+                prob_list.append(prob.cpu().numpy()[0])
+                gt_list.append(correct.cpu().numpy()[0])
 
                 if predicted == correct:
                     c += 1
                 tot += 1
-                ## break
+
+        # CSV 저장
+        pd.DataFrame(prob_list).to_csv(csv_path, header=False, index=False)
+        pd.DataFrame(gt_list).to_csv(gt_path, header=False, index=False)
+        print(f"CSV 저장 완료: {csv_path}")
 
         accuracy = c / tot
         inference_time = end_time - start_time
         print("Inference time:", inference_time, "seconds")
-
         print("Accuracy: {}".format(accuracy))
 
     def test(self):

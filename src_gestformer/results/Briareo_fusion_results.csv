@@ -1,0 +1,32 @@
+﻿#,Color,Depth,IR,Normals,Optical flow,Combination,Accuracy
+1,v,,,,,Color,96.53%
+1,,v,,,,Depth,94.79%
+1,,,v,,,IR,96.53%
+1,,,,v,,Normals,97.57%
+1,,,,,v,Optical flow,95.14%
+2,v,v,,,,Color + Depth,96.18%
+2,v,,v,,,Color + IR,97.22%
+2,v,,,v,,Color + Normals,97.92%
+2,v,,,,v,Color + Optical flow,97.22%
+2,,v,v,,,Depth + IR,96.88%
+2,,v,,v,,Depth + Normals,96.53%
+2,,v,,,v,Depth + Optical flow,96.53%
+2,,,v,v,,IR + Normals,97.57%
+2,,,v,,v,IR + Optical flow,97.92%
+2,,,,v,v,Normals + Optical flow,98.26%
+3,v,v,v,,,Color + Depth + IR,96.88%
+3,v,v,,v,,Color + Depth + Normals,97.22%
+3,v,v,,,v,Color + Depth + Optical flow,97.22%
+3,v,,v,v,,Color + IR + Normals,97.57%
+3,v,,v,,v,Color + IR + Optical flow,97.57%
+3,v,,,v,v,Color + Normals + Optical flow,97.92%
+3,,v,v,v,,Depth + IR + Normals,97.22%
+3,,v,v,,v,Depth + IR + Optical flow,97.22%
+3,,v,,v,v,Depth + Normals + Optical flow,97.92%
+3,,,v,v,v,IR + Normals + Optical flow,97.92%
+4,v,v,v,v,,Color + Depth + IR + Normals,96.88%
+4,v,v,v,,v,Color + Depth + IR + Optical flow,97.92%
+4,v,v,,v,v,Color + Depth + Normals + Optical flow,97.22%
+4,v,,v,v,v,Color + IR + Normals + Optical flow,97.92%
+4,,v,v,v,v,Depth + IR + Normals + Optical flow,97.22%
+5,v,v,v,v,v,Color + Depth + IR + Normals + Optical flow,97.57%

@@ -1,0 +1,40 @@
+Table. Results for different modalities on Briareo dataset.
+Late Fusion (average of softmax probabilities)
+========================================================================
+ #   Color    Depth    IR    Normals    Opt.Flow    Accuracy
+ --------------------------------------------------------------------
+ 1   v                                         96.53%
+ 1           v                                 94.79%
+ 1                   v                         96.53%
+ 1                        v                    97.57%
+ 1                                  v          95.14%
+ 2   v       v                                 96.18%
+ 2   v               v                         97.22%
+ 2   v                    v                    97.92%
+ 2   v                              v          97.22%
+ 2           v       v                         96.88%
+ 2           v            v                    96.53%
+ 2           v                      v          96.53%
+ 2                   v    v                    97.57%
+ 2                   v              v          97.92%
+ 2                        v         v          98.26%
+ 3   v       v       v                         96.88%
+ 3   v       v            v                    97.22%
+ 3   v       v                      v          97.22%
+ 3   v               v    v                    97.57%
+ 3   v               v              v          97.57%
+ 3   v                    v         v          97.92%
+ 3           v       v    v                    97.22%
+ 3           v       v              v          97.22%
+ 3           v            v         v          97.92%
+ 3                   v    v         v          97.92%
+ 4   v       v       v    v                    96.88%
+ 4   v       v       v              v          97.92%
+ 4   v       v            v         v          97.22%
+ 4   v               v    v         v          97.92%
+ 4           v       v    v         v          97.22%
+ 5   v       v       v    v         v          97.57%
+========================================================================
+
+Best accuracy   : 98.26%
+Best combination: Normals + Optical flow
